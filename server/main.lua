@@ -91,7 +91,7 @@ RegisterNetEvent('senor-lms:server:leavelms')
 AddEventHandler('senor-lms:server:leavelms', function(data)
     local src = source
     local args = (data[1] ~= nil and data[1] ~= "") and data[1] or src
-    local license = QBCore.Functions.GetIdentifier(args, 'license')
+    local license = LMS.Init().Functions.GetIdentifier(args, 'license')
     local pName = GetPlayerName(src)
 
     if args ~= nil then
