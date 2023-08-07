@@ -19,7 +19,7 @@ local playerFlagged = nil
 
 RegisterNetEvent('senor-lms:client:flagPlayer')
 AddEventHandler('senor-lms:client:flagPlayer', function(state)
-    print(States['STARTING'])
+    print('you are being flagged with' .. state)
     playerFlagged = state
 end)
 

@@ -32,7 +32,7 @@ function LMS.Init()
             -- Player = self.Functions.isPlayerAlreadyIn(license) == true or table.insert(gameState.players, license)
             local retval = self.Functions.isPlayerAlreadyIn(license)
             if not retval then
-                 table.insert(gameState.players, license)
+                 table.insert(gameState.players, {license = license, entity = GetPlayerPed(plyID)})
                  print(pName, 'joined the game', json.encode(self.Functions.getPlayers()))
                  return
             end
@@ -44,10 +44,14 @@ function LMS.Init()
         return gameState.players
     end
 
+    function self.Functions.playersAmount()
+        return #gameState.players
+    end
+
     function self.Functions.isPlayerAlreadyIn(plyID)
         local players = self.Functions.getPlayers()
         for _,v in pairs(players) do
-            if v == plyID then
+            if v.license == plyID then
                 return true
             end
             return false
@@ -60,18 +64,13 @@ function LMS.Init()
 
 
         for k,v in pairs(players) do
-            if v == plyID then
+            if v.license == plyID then
                 player = v or plyID
                 table.remove(players, k)
             end
         end
         return player
     end
-
-    function self.Functions.changeState(Mode)
-        gameState.currentState = States[Mode]
-    end
-
 
     function self.Functions.GenerateMap()
         local randomNumber = math.random(1, #Config.Locations)
@@ -80,6 +79,7 @@ function LMS.Init()
         return Config.Locations[randomNumber].name
     end
 
+    -- Getters and Setters
     function self.States.setMap(map)
         gameState.map = map
         return gameState.map
@@ -88,19 +88,35 @@ function LMS.Init()
     function self.States.getMap()
         return gameState.map
     end
+
+    function self.States.getMapCoords(map)
+        for k,v in pairs(Config.Locations) do
+            if (v.name == map) then
+                return v.coords
+            end
+            return nil
+        end
+    end
+
+    function self.States.change(Mode)
+        gameState.currentState = States[Mode]
+    end
     return self
 end
+
+local NewLMS = LMS.Init()
 
 RegisterNetEvent('senor-lms:server:enterlms')
 AddEventHandler('senor-lms:server:enterlms', function()
     local src = source
+    local ped = GetPlayerPed(src)
 
     if (gameState.currentState == States.IN_PROGRESS) then
         print('cant join right now, game is active')
         return
     end
 
-    LMS.Init().Functions.addPlayerToGame(src)
+    NewLMS.Functions.addPlayerToGame(src)
     TriggerClientEvent('senor-lms:client:flagPlayer', src, States['WAITING'])
 end)
 
@@ -108,11 +124,11 @@ RegisterNetEvent('senor-lms:server:leavelms')
 AddEventHandler('senor-lms:server:leavelms', function(data)
     local src = source
     local args = (data[1] ~= nil and data[1] ~= "") and data[1] or src
-    local license = LMS.Init().Functions.GetIdentifier(args, 'license')
+    local license = NewLMS.Functions.GetIdentifier(args, 'license')
     local pName = GetPlayerName(src)
 
     if args ~= nil then
-        local retval = LMS.Init().Functions.removePlayerFromGame(license)
+        local retval = NewLMS.Functions.removePlayerFromGame(license)
         if (retval and retval ~= nil) then
             print(pName .. ' was removed from the game')
             TriggerClientEvent('senor-lms:client:flagPlayer', src, States['OFF'])
@@ -128,8 +144,8 @@ AddEventHandler('senor-lms:server:attemptTransfer', function()
     local src = source
 
     if (#gameState.players <= Config.MinimumPlayers) then
-        LMS.Init().Functions.GenerateMap()
-        TriggerEvent('senor-lms:server:TeleportPlayers', LMS.Init().Functions.getPlayers())
+        NewLMS.Functions.GenerateMap()
+        TriggerEvent('senor-lms:server:TeleportPlayers', NewLMS.Functions.getPlayers())
         TriggerClientEvent('QBCore:Notify', src, 'You are being teleported to LMS', 'primary', 5000)
         TriggerClientEvent('senor-lms:client:flagPlayer', src, States['STARTING'])
         return
@@ -140,50 +156,13 @@ end)
 
 RegisterNetEvent('senor-lms:server:TeleportPlayers')
 AddEventHandler('senor-lms:server:TeleportPlayers', function(players)
-    -- teleport players by license?
+    local src = source
+    local map = NewLMS.States.getMapCoords(NewLMS.States.getMap()) 
+    local playersAmount = NewLMS.Functions.playersAmount()
+    -- TODO: set the Config.Locations[1] dynamic with the maps and not hardcoded
+    for k,v in pairs(players) do
+        SetEntityCoords(v.entity, Config.Locations[1].coords[k])
+    end
 end)
 
-
-
--- Old code no Class
--- local function getPlayers()
---     return gameState.players
--- end
-
--- local function addPlayerToGame(netId)
---     local license = string.gsub(GetPlayerIdentifiers(netId)[1], "license:", "")
---     local steamName = GetPlayerName(netId)
-
---     local players = getPlayers()
---     for k,v in pairs(players) do
---         local playerLicense = v[1]
---         local playerObj = players[k][1]
---         if playerObj == playerLicense then 
---             print('Player: ' .. steamName .. ' already in game')
---             return
---         end
---     end
---     print('Player: '.. steamName .. ' joined game.')
---     table.insert(gameState.players, {license, steamName})
--- end
-
--- RegisterNetEvent('senor-lms:client:enterlms')
--- AddEventHandler('senor-lms:client:enterlms', function()
---     local src = source
-
---     if (gameState.currentState == States.IN_PROGRESS) then 
---         print('cant join right now, game is active')
---         return
---     end
-
---     addPlayerToGame(src)
-
---     TriggerClientEvent('senor-lms:client:enteredlms', src)
--- end)
-
--- function ShareGameData(field)
---     if (not field) then return gameState end
-
---     return gameState[field]
--- end
 
