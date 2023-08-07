@@ -89,12 +89,11 @@ function LMS.Init()
         return gameState.map
     end
 
-    function self.States.getMapCoords(map)
-        for k,v in pairs(Config.Locations) do
-            if (v.name == map) then
-                return v.coords
+    function self.States.getMapCoords()
+        for k,v in ipairs(Config.Locations) do
+            if (v.name == self.States.getMap()) then
+                return {coords = v.coords}
             end
-            return nil
         end
     end
 
@@ -105,6 +104,7 @@ function LMS.Init()
 end
 
 local NewLMS = LMS.Init()
+
 
 RegisterNetEvent('senor-lms:server:enterlms')
 AddEventHandler('senor-lms:server:enterlms', function()
@@ -156,12 +156,11 @@ end)
 
 RegisterNetEvent('senor-lms:server:TeleportPlayers')
 AddEventHandler('senor-lms:server:TeleportPlayers', function(players)
-    local src = source
-    local map = NewLMS.States.getMapCoords(NewLMS.States.getMap()) 
+    local map = NewLMS.States.getMapCoords() 
+    print(json.encode(map.coords), 'map ')
     local playersAmount = NewLMS.Functions.playersAmount()
-    -- TODO: set the Config.Locations[1] dynamic with the maps and not hardcoded
     for k,v in pairs(players) do
-        SetEntityCoords(v.entity, Config.Locations[1].coords[k])
+        SetEntityCoords(v.entity, map.coords[k])
     end
 end)
 
