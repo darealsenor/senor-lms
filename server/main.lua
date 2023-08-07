@@ -12,6 +12,7 @@ local LMS = {}
 function LMS.Init()
     local self = {}
     self.Functions = {}
+    self.States = {}
 
     -- taken from qb core
     function self.Functions.GetIdentifier(source, idtype)
@@ -71,6 +72,22 @@ function LMS.Init()
         gameState.currentState = States[Mode]
     end
 
+
+    function self.Functions.GenerateMap()
+        local randomNumber = math.random(1, #Config.Locations)
+        self.States.setMap(Config.Locations[randomNumber].name)
+
+        return Config.Locations[randomNumber].name
+    end
+
+    function self.States.setMap(map)
+        gameState.map = map
+        return gameState.map
+    end
+
+    function self.States.getMap()
+        return gameState.map
+    end
     return self
 end
 
@@ -111,15 +128,20 @@ AddEventHandler('senor-lms:server:attemptTransfer', function()
     local src = source
 
     if (#gameState.players <= Config.MinimumPlayers) then
-        TriggerEvent('senor-lms:server:TeleportPlayers')
+        TriggerEvent('senor-lms:server:TeleportPlayers', LMS.Init().Functions.getPlayers())
         TriggerClientEvent('QBCore:Notify', src, 'You are being teleported to LMS', 'primary', 5000)
         TriggerClientEvent('senor-lms:client:flagPlayer', src, States['STARTING'])
+        LMS.Init().Functions.GenerateMap()
         return
     end
 
     print('Not enough players')
 end)
 
+RegisterNetEvent('senor-lms:server:TeleportPlayers')
+AddEventHandler('senor-lms:server:TeleportPlayers', function(players)
+    -- teleport players by license?
+end)
 
 
 
