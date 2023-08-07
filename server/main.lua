@@ -128,10 +128,10 @@ AddEventHandler('senor-lms:server:attemptTransfer', function()
     local src = source
 
     if (#gameState.players <= Config.MinimumPlayers) then
+        LMS.Init().Functions.GenerateMap()
         TriggerEvent('senor-lms:server:TeleportPlayers', LMS.Init().Functions.getPlayers())
         TriggerClientEvent('QBCore:Notify', src, 'You are being teleported to LMS', 'primary', 5000)
         TriggerClientEvent('senor-lms:client:flagPlayer', src, States['STARTING'])
-        LMS.Init().Functions.GenerateMap()
         return
     end
 
