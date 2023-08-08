@@ -109,7 +109,6 @@ local NewLMS = LMS.Init()
 RegisterNetEvent('senor-lms:server:enterlms')
 AddEventHandler('senor-lms:server:enterlms', function()
     local src = source
-    local ped = GetPlayerPed(src)
 
     if (gameState.currentState == States.IN_PROGRESS) then
         print('cant join right now, game is active')
@@ -145,9 +144,9 @@ AddEventHandler('senor-lms:server:attemptTransfer', function()
 
     if (#gameState.players <= Config.MinimumPlayers) then
         NewLMS.Functions.GenerateMap()
-        TriggerEvent('senor-lms:server:TeleportPlayers', NewLMS.Functions.getPlayers())
         TriggerClientEvent('QBCore:Notify', src, 'You are being teleported to LMS', 'primary', 5000)
         TriggerClientEvent('senor-lms:client:flagPlayer', src, States['STARTING'])
+        TriggerEvent('senor-lms:server:TeleportPlayers',src, NewLMS.Functions.getPlayers())
         return
     end
 
@@ -155,13 +154,16 @@ AddEventHandler('senor-lms:server:attemptTransfer', function()
 end)
 
 RegisterNetEvent('senor-lms:server:TeleportPlayers')
-AddEventHandler('senor-lms:server:TeleportPlayers', function(players)
+AddEventHandler('senor-lms:server:TeleportPlayers', function(src, players)
     local map = NewLMS.States.getMapCoords() 
-    print(json.encode(map.coords), 'map ')
     local playersAmount = NewLMS.Functions.playersAmount()
     for k,v in pairs(players) do
         SetEntityCoords(v.entity, map.coords[k])
+        TriggerClientEvent('senor-lms:client:flagPlayer', src, States['IN_PROGRESS'])
+        TriggerClientEvent('senor-lms:client:killSubscriber', src, NewLMS.Functions.getPlayers())
     end
+
+    TriggerClientEvent('QBCore:Notify', src, 'Game Started with ' .. playersAmount .. ' players - Good luck!', 'primary', 5000)
 end)
 
 
